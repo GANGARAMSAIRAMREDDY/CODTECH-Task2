@@ -1,0 +1,58 @@
+import pandas as pd
+import numpy as np
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Sample data (replace with your actual data)
+data = {'Customer ID': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        'Purchase Frequency': [5, 2, 7, 4, 3, 8, 1, 9, 6, 2],
+        'Total Spending': [100, 50, 200, 150, 75, 250, 25, 300, 175, 50]}
+
+# Create a DataFrame
+df = pd.DataFrame(data)
+
+# Handle missing values (if any)
+df.fillna(method='ffill', inplace=True)  # Replace with appropriate imputation method
+
+# Select relevant features
+features = ['Purchase Frequency', 'Total Spending']
+
+# Scale the features
+scaler = StandardScaler()
+scaled_features = scaler.fit_transform(df[features])
+
+# Determine the optimal number of clusters (using the elbow method)
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters=i, init='k-means++', random_state=42)
+    kmeans.fit(scaled_features)
+    wcss.append(kmeans.inertia_)
+
+plt.plot(range(1, 11), wcss)
+plt.title('Elbow Method')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+
+# Choose the optimal number of clusters
+num_clusters = 3  # Adjust based on the elbow plot
+
+# Create the K-Means model and fit the data
+kmeans = KMeans(n_clusters=num_clusters, init='k-means++', random_state=42)
+kmeans.fit(scaled_features)
+
+# Add cluster labels to the original DataFrame
+df['Cluster'] = kmeans.labels_
+
+# Analyze segment characteristics
+for cluster_num in range(num_clusters):
+    cluster_data = df[df['Cluster'] == cluster_num]
+    print(f"Cluster {cluster_num} Characteristics:")
+    print(cluster_data[features].describe())
+
+# Visualize the clusters
+sns.scatterplot(x='Purchase Frequency', y='Total Spending', hue='Cluster', data=df)
+plt.title('Customer Segmentation')
+plt.show()
